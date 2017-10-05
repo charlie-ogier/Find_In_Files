@@ -1,0 +1,368 @@
+' Gambas class file
+
+sExtList As New String[]
+sFileStore As New String[]
+bStop As Boolean
+
+Public Sub Form_Open()
+
+DirChooserFF.SelectedPath = Settings["SelectedPath", User.Home]
+TextBoxSearch.SetFocus
+Settings.Read(Me, "Window")
+
+End
+
+Public Sub DirChooserFF_Change()
+Dim sFolder As String = DirChooserFF.SelectedPath
+Dim sTemp, sFilter As String
+Dim sStat As Stat
+Dim sTempStore As New String[]
+Dim iFileCounter As Integer
+
+ButtonView.Enabled = True
+sFilter = "*"
+Settings["SelectedPath"] = sFolder
+Settings.Save
+sFileStore.Clear
+LabelWorking.Visible = True
+Wait 0.1
+
+If DirChooserFF.SelectedPath = "/home" Or DirChooserFF.SelectedPath = User.Home Or DirChooserFF.SelectedPath = "/" Then
+  CheckBoxSubFolders.Value = 0
+  CheckBoxSubFolders.Enabled = False
+Else
+  CheckBoxSubFolders.Enabled = True
+Endif
+
+If CheckBoxSubFolders.value = True Then
+  sTempStore = RDir(sFolder, sFilter, gb.File) 
+  GoSub GetFileList
+Else
+  sTempStore = Dir(sFolder, sFilter, gb.File)
+  GoSub GetFileList
+End If
+
+sFileStore.sort()
+
+ValueBoxNoFiles.Value = iFileCounter
+If iFileCounter > 5000 Then ButtonView.Enabled = False
+LabelWorking.Visible = False
+TextBoxSearch.SetFocus
+Wait 0.1
+
+Return
+
+GetFileList:
+  For Each sTemp In sTempStore
+    If CheckBoxHidden.value = False Then
+      sStat = Stat(sFolder &/ sTemp)
+      If sStat.Hidden = False Then 
+        sFileStore.Add(sTemp)
+        Inc iFileCounter
+      Endif
+    Else
+      sFileStore.Add(sTemp)
+      Inc iFileCounter
+    Endif
+  Next
+Return
+
+End
+
+Public Sub TextBoxSearch_Change()
+
+If Trim(TextBoxSearch.Text) = "" Then 
+  ButtonSearch.Enabled = False
+Else If ValueBoxNoFiles.Value > 0
+  ButtonSearch.Enabled = True
+Endif
+
+End
+
+Public Sub AllButtons_Click(Optional sDirectInput As String)
+Dim sName As String = sDirectInput
+
+If sName = "" Then sName = Last.name
+
+Select Case sName
+  Case "ButtonView"
+    ViewFiles(ButtonView.Value)
+  Case "ButtonExit"
+    Me.Close
+  Case "ButtonAbout"
+    DisplayAbout(ButtonAbout.Value)
+  Case "ButtonSearch"
+    DisplaySearch(ButtonSearch.value)
+    If ButtonSearch.value = True Then DoTheSearch
+  Case "ButtonStop"
+    bStop = True
+  Case "ButtonExtensions"
+    Extensions
+End Select
+
+TextBoxSearch.SetFocus
+
+End
+
+Public Sub Extensions()
+Dim sFolder As String = DirChooserFF.SelectedPath
+Dim sList As New String[]
+Dim sTemp, sTempExt, sExt As String
+Dim hCheckBox As CheckBox
+Dim siCount As Short
+
+HBoxDir.Visible = False
+HBox0.Visible = False
+HBox1.Visible = False
+HBox2.Visible = False
+HBoxExtensions.Visible = True
+
+sExtList.Clear
+
+For Each sTemp In sFileStore
+  sExt = File.Ext(sFolder &/ sTemp)
+  If sExt = "" Then sExt = "NO EXT"
+  If Not InStr(sTempExt, sExt) Then sTempExt &= sExt & ","
+Next
+
+For Each sTemp In Split(sTempExt)
+  sList.Add(sTemp)
+Next
+
+sList.Sort()
+VPanelExtList.Children.Clear
+
+For Each sTemp In sList
+  hCheckBox = New CheckBox(VPanelExtList) As "AllExtCheckBoxes"
+  If Not sTemp Then Continue 'sTemp = "NO EXT"
+  With hCheckBox
+    .Text = sTemp
+    .Height = 28
+    .AutoResize = True
+    .Tag = siCount
+    .Value = True
+  End With
+  If sTemp = "NO EXT" Then hCheckBox.Tooltip = "This represents files with no extention"
+  Inc siCount
+Next
+
+TimerExt.Trigger
+
+End
+
+Public Sub TimerExt_Timer()
+
+Settings.Write(Me, "Window")                                                  'Store the window position and size
+Me.Width = 280 + VPanelExtList.Width
+Me.Center
+
+End
+
+Public Sub BuildList()
+Dim oObj As Object
+Dim sNewList As New String[]
+
+For Each oObj In VPanelExtList.Children
+  If oObj.Value = True Then sNewList.add(oObj.Text)
+Next
+
+'FMain.sInUseExts.Clear
+'FMain.sInUseExts = sNewList.Copy()
+
+End
+
+Public Sub AllExtCheckBoxes_Click()
+Dim oObj As Object
+Dim bOnOff As Boolean
+
+ButtonDone.Enabled = False
+
+For Each oObj In VPanelExtList.Children
+  If oObj.Value = True Then
+    ButtonDone.Enabled = True
+    Break
+  End If 
+Next
+
+End
+
+Public Sub AllSelect_Click()
+Dim bOnOff As Boolean
+Dim oObj As Object
+
+If Last.Name = "ButtonSelectAll" Then bOnOff = True
+
+For Each oObj In VPanelExtList.Children
+  oObj.Value = bOnOff
+Next
+
+End
+
+
+Public Sub ButtonsControl_Click()
+
+If Last.Name = "ButtonDone" Then BuildList
+
+HBoxDir.Visible = True
+HBox0.Visible = True
+HBox1.Visible = True
+HBox2.Visible = True
+HBoxExtensions.Visible = False 
+
+Settings.Read(Me, "Window")                                                  'Store the window position and size
+
+End
+
+Public Sub DoTheSearch()
+Dim sFolder As String = DirChooserFF.SelectedPath
+Dim sFileData, sTemp, sFilesProcessed As String
+Dim sToFind As String = UCase(Trim(TextBoxSearch.Text))
+Dim iRows, iCounter As Integer
+
+ButtonExit.Enabled = False
+ButtonSearch.Enabled = False
+ButtonStop.Enabled = True
+LabelFilesFound.Text = "Files found = " & Str(iRows)
+
+With GridViewFound
+  .Clear
+  .Columns.count = 1
+  .Grid = False
+End With
+
+TextAreaFilesProcessed.text = ""
+
+Wait 0.01
+
+For Each sTemp In sFileStore
+  Inc iCounter
+  If bStop Then Break
+  PanelProgress.Width = (HBoxProgress.Width / 100) * (iCounter / sFileStore.max) * 100 
+  TextAreaFilesProcessed.text &= sTemp & gb.NewLine
+  sFileData = UCase(File.Load(sFolder &/ sTemp))
+  If InStr(sFileData, sToFind) Then
+    Inc iRows
+    LabelFilesFound.Text = "Files found = " & Str(iRows) 
+    GridViewFound.Rows.count = iRows
+    GridViewFound[iRows - 1, 0].text = sTemp
+  Endif
+  LabelSearchText.Text = "Search string = " & TextBoxSearch.Text
+  LabelFilesSearched.Text = "Processed file " & Str(iCounter) & " of " & sFileStore.Count
+  Wait 0.001
+Next
+
+If iRows > 0 Then LabelHelp.text = "Click on a file to open"
+
+bStop = False
+ButtonExit.Enabled = True
+ButtonSearch.Enabled = True
+ButtonStop.Enabled = False
+
+End
+
+Public Sub GridViewFound_Click()
+Dim sFolder As String = DirChooserFF.SelectedPath
+
+Desktop.Open(sFolder &/ GridViewFound[Last.Row, Last.Column].Text)
+
+End
+
+Public Sub DisplaySearch(bMode As Boolean)
+
+If bMode Then
+  ButtonSearch.Tag = 1
+  HBoxDir.Visible = False
+  PanelProgress.Width = 1
+  VBoxSearch.Visible = True
+  HSplitSearch.Layout = [50, 50]
+  HBox0.Visible = False
+  HBox1.Visible = False
+  ButtonAbout.Enabled = False
+  ButtonSearch.Text = "C&lose"
+Else
+  ButtonSearch.Tag = 0
+  HBoxDir.Visible = True
+  VBoxSearch.Visible = False
+  HBox0.Visible = True
+  HBox1.Visible = True
+  ButtonAbout.Enabled = True
+  ButtonSearch.Text = "&Search"
+Endif
+
+End
+
+Public Sub DisplayAbout(bMode As Boolean)
+
+If bMode Then
+  ButtonAbout.Tag = 1
+  HBoxDir.Visible = False
+  HBoxAbout.Visible = True
+  HBox0.Visible = False
+  HBox1.Visible = False
+  ButtonSearch.Enabled = False
+  ButtonAbout.Text = "C&lose"
+Else
+  ButtonAbout.Tag = 0
+  HBoxDir.Visible = True
+  HBoxAbout.Visible = False
+  HBox0.Visible = True
+  HBox1.Visible = True
+  TextBoxSearch_Change
+  
+  ButtonAbout.Text = "&About"
+Endif
+
+End
+
+Public Sub ViewFiles(bMode As Boolean)
+
+If bMode Then
+  ButtonView.Tag = 1
+  ButtonView.Text = "&Close"
+  HBoxDir.Visible = False
+  HBoxView.Visible = True
+  HBoxCheckBoxes.Visible = False
+  ButtonAbout.Enabled = False
+  ButtonSearch.Enabled = False
+  HBox1.Enabled = False
+  TextAreaView.text = sFileStore.Join(gb.NewLine)
+  TextAreaView.Pos = 0
+Else
+  ButtonView.Tag = 0
+  ButtonView.Text = "&View"
+  HBoxDir.Visible = True
+  HBoxView.Visible = False
+  HBoxCheckBoxes.Visible = True
+  ButtonAbout.Enabled = True
+  TextBoxSearch_Change
+  HBox1.Enabled = True
+Endif
+
+End
+
+Public Sub AllCheckboxes_Click()
+
+DirChooserFF_Change
+
+End
+
+Public Sub Form_KeyPress()
+
+If ButtonSearch.Enabled = True And ButtonSearch.Visible = True Then
+  If Key.code = Key.Return Or Key.code = Key.Enter Then TimerSearch.Trigger
+Endif
+
+End
+
+Public Sub TimerSearch_Timer()
+
+ButtonSearch.Value = True
+
+End
+
+Public Sub Form_Close()
+
+Settings.Write(Me, "Window")                                                  'Store the window position and size
+
+End
+

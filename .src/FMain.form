@@ -2,6 +2,7 @@
 
 { Form Form
   MoveScaled(0,0,96,69)
+  Icon = Picture["logo.png"]
   Arrangement = Arrange.Vertical
   Padding = 5
   { HBoxView HBox

@@ -114,8 +114,8 @@ Dim siCount As Short
 HBoxDir.Visible = False
 HBox0.Visible = False
 HBox1.Visible = False
-HBox2.Visible = False
 HBoxExtensions.Visible = True
+ButtonAbout.Enabled = False
 
 sExtList.Clear
 
@@ -173,7 +173,6 @@ End
 
 Public Sub AllExtCheckBoxes_Click()
 Dim oObj As Object
-Dim bOnOff As Boolean
 
 ButtonDone.Enabled = False
 
@@ -206,8 +205,8 @@ If Last.Name = "ButtonDone" Then BuildList
 HBoxDir.Visible = True
 HBox0.Visible = True
 HBox1.Visible = True
-HBox2.Visible = True
 HBoxExtensions.Visible = False 
+ButtonAbout.Enabled = True
 
 Settings.Read(Me, "Window")                                                  'Store the window position and size
 
@@ -215,7 +214,7 @@ End
 
 Public Sub DoTheSearch()
 Dim sFolder As String = DirChooserFF.SelectedPath
-Dim sFileData, sTemp, sFilesProcessed As String
+Dim sFileData, sTemp As String
 Dim sToFind As String = UCase(Trim(TextBoxSearch.Text))
 Dim iRows, iCounter As Integer
 

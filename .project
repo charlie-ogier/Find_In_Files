@@ -2,6 +2,7 @@
 # Compiled with Gambas 3.10.0
 Title=Find In Files
 Startup=FMain
+Icon=logo.png
 Version=0.0.1
 Component=gb.image
 Component=gb.gui.qt
@@ -9,6 +10,9 @@ Component=gb.form
 Component=gb.desktop.x11
 Component=gb.desktop
 Component=gb.settings
+Description="To find text in files"
+Authors="Charlie Ogier 2017"
 TabSize=2
 Language=en_US
+Vendor=cogier
 Packager=1

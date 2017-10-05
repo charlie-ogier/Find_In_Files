@@ -1,6 +1,7 @@
 ' Gambas class file
 
 sExtList As New String[]
+sExtInUse As New String[]
 sFileStore As New String[]
 bStop As Boolean
 
@@ -102,6 +103,9 @@ End Select
 
 TextBoxSearch.SetFocus
 
+Catch
+
+
 End
 
 Public Sub Extensions()
@@ -153,7 +157,7 @@ End
 Public Sub TimerExt_Timer()
 
 Settings.Write(Me, "Window")                                                  'Store the window position and size
-Me.Width = 280 + VPanelExtList.Width
+Me.Width = 400 + VPanelExtList.Width
 Me.Center
 
 End
@@ -161,13 +165,20 @@ End
 Public Sub BuildList()
 Dim oObj As Object
 Dim sNewList As New String[]
+Dim bTest As Boolean
+
+sExtInUse.Clear
 
 For Each oObj In VPanelExtList.Children
   If oObj.Value = True Then sNewList.add(oObj.Text)
+  If oObj.Value = False Then bTest = True
 Next
 
-'FMain.sInUseExts.Clear
-'FMain.sInUseExts = sNewList.Copy()
+If bTest = False Then 
+  sExtInUse = sNewList.Copy()
+Else
+  sExtInUse.add("*")
+End If
 
 End
 
@@ -217,6 +228,8 @@ Dim sFolder As String = DirChooserFF.SelectedPath
 Dim sFileData, sTemp As String
 Dim sToFind As String = UCase(Trim(TextBoxSearch.Text))
 Dim iRows, iCounter As Integer
+Dim dSearchTime As Date
+Dim dStartTime As Date = Time(Now)
 
 ButtonExit.Enabled = False
 ButtonSearch.Enabled = False
@@ -224,6 +237,7 @@ ButtonStop.Enabled = True
 LabelFilesFound.Text = "Files found = " & Str(iRows)
 
 With GridViewFound
+  .Rows.Height = 17
   .Clear
   .Columns.count = 1
   .Grid = False
@@ -236,9 +250,9 @@ Wait 0.01
 For Each sTemp In sFileStore
   Inc iCounter
   If bStop Then Break
-  PanelProgress.Width = (HBoxProgress.Width / 100) * (iCounter / sFileStore.max) * 100 
+  PanelProgress.Width = ((HBoxProgress.Width / 100) * (iCounter / sFileStore.max) * 100) - 4
   TextAreaFilesProcessed.text &= sTemp & gb.NewLine
-  sFileData = UCase(File.Load(sFolder &/ sTemp))
+  Try sFileData = UCase(File.Load(sFolder &/ sTemp))
   If InStr(sFileData, sToFind) Then
     Inc iRows
     LabelFilesFound.Text = "Files found = " & Str(iRows) 
@@ -247,15 +261,21 @@ For Each sTemp In sFileStore
   Endif
   LabelSearchText.Text = "Search string = " & TextBoxSearch.Text
   LabelFilesSearched.Text = "Processed file " & Str(iCounter) & " of " & sFileStore.Count
+  LabelFile.Text = sFolder &/ sTemp
   Wait 0.001
 Next
 
 If iRows > 0 Then LabelHelp.text = "Click on a file to open"
+LabelFile.Text = ""
+dSearchTime = Time(Now)
+LabelTime.text = FormatTime(dStartTime)
 
 bStop = False
 ButtonExit.Enabled = True
 ButtonSearch.Enabled = True
 ButtonStop.Enabled = False
+
+Catch
 
 End
 
@@ -364,4 +384,20 @@ Public Sub Form_Close()
 Settings.Write(Me, "Window")                                                  'Store the window position and size
 
 End
+
+Public Sub FormatTime(tStart As Date) As String
+Dim sMin, sSec, sMs As String
+
+tStart = Time(Now) - tStart
+
+If Val(Format(tStart, "nn")) > 0 Then sMin = Format(tStart, "n") & " min "
+If Val(Format(tStart, "ss")) > 0 Then sSec = Format(tStart, "s") & " sec "
+If Not sSec Then
+  If Val(Format(tStart, "uu")) > 0 Then sMs = Format(tStart, "u") & " ms"
+End If 
+
+Return "Search time: - " & sMin & sSec & sMs
+
+End
+
 

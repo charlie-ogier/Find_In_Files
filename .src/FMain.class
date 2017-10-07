@@ -1,15 +1,17 @@
 ' Gambas class file
 
 sExtList As New String[]
-sExtInUse As New String[]
+sExtInUse As String = "."
 sFileStore As New String[]
 bStop As Boolean
+bFirst As Boolean
 
 Public Sub Form_Open()
 
 DirChooserFF.SelectedPath = Settings["SelectedPath", User.Home]
 TextBoxSearch.SetFocus
 Settings.Read(Me, "Window")
+bFirst = True
 
 End
 
@@ -20,12 +22,13 @@ Dim sStat As Stat
 Dim sTempStore As New String[]
 Dim iFileCounter As Integer
 
+If bFirst = False Then Return
 ButtonView.Enabled = True
 sFilter = "*"
 Settings["SelectedPath"] = sFolder
 Settings.Save
 sFileStore.Clear
-LabelWorking.Visible = True
+TimerWorking.Start
 Wait 0.1
 
 If DirChooserFF.SelectedPath = "/home" Or DirChooserFF.SelectedPath = User.Home Or DirChooserFF.SelectedPath = "/" Then
@@ -35,13 +38,28 @@ Else
   CheckBoxSubFolders.Enabled = True
 Endif
 
+
 If CheckBoxSubFolders.value = True Then
   sTempStore = RDir(sFolder, sFilter, gb.File) 
-  GoSub GetFileList
 Else
   sTempStore = Dir(sFolder, sFilter, gb.File)
-  GoSub GetFileList
 End If
+
+For Each sTemp In sTempStore
+    If sExtInUse <> "." Then
+      If Not InStr(sExtInUse, "." & File.Ext(sFolder &/ sTemp)) Then Continue
+    Endif
+    If CheckBoxHidden.value = False Then
+      Try sStat = Stat(sFolder &/ sTemp)
+      If sStat.Hidden = False Then 
+      sFileStore.Add(sTemp)
+      Inc iFileCounter
+    Endif
+  Else
+    sFileStore.Add(sTemp)
+    Inc iFileCounter
+  Endif
+Next
 
 sFileStore.sort()
 
@@ -49,28 +67,27 @@ ValueBoxNoFiles.Value = iFileCounter
 If iFileCounter > 5000 Then ButtonView.Enabled = False
 LabelWorking.Visible = False
 TextBoxSearch.SetFocus
+TimerWorking.Stop
 Wait 0.1
 
-Return
+End
 
-GetFileList:
-  For Each sTemp In sTempStore
-    If CheckBoxHidden.value = False Then
-      sStat = Stat(sFolder &/ sTemp)
-      If sStat.Hidden = False Then 
-        sFileStore.Add(sTemp)
-        Inc iFileCounter
-      Endif
-    Else
-      sFileStore.Add(sTemp)
-      Inc iFileCounter
-    Endif
-  Next
-Return
+Public Sub TimerWorking_Timer()
+
+LabelWorking.Visible = True
+Wait 0.1
+
+End
+
+Public Sub ValueBoxNoFiles_Change()
+
+TextBoxSearch_Change
 
 End
 
 Public Sub TextBoxSearch_Change()
+
+ButtonSearch.Enabled = False
 
 If Trim(TextBoxSearch.Text) = "" Then 
   ButtonSearch.Enabled = False
@@ -105,7 +122,6 @@ TextBoxSearch.SetFocus
 
 Catch
 
-
 End
 
 Public Sub Extensions()
@@ -138,7 +154,7 @@ VPanelExtList.Children.Clear
 
 For Each sTemp In sList
   hCheckBox = New CheckBox(VPanelExtList) As "AllExtCheckBoxes"
-  If Not sTemp Then Continue 'sTemp = "NO EXT"
+  If Not sTemp Then Continue 
   With hCheckBox
     .Text = sTemp
     .Height = 28
@@ -167,17 +183,17 @@ Dim oObj As Object
 Dim sNewList As New String[]
 Dim bTest As Boolean
 
-sExtInUse.Clear
+sExtInUse = "."
 
 For Each oObj In VPanelExtList.Children
   If oObj.Value = True Then sNewList.add(oObj.Text)
   If oObj.Value = False Then bTest = True
 Next
 
-If bTest = False Then 
-  sExtInUse = sNewList.Copy()
+If bTest = True Then 
+  sExtInUse &= sNewList.Join(".")
 Else
-  sExtInUse.add("*")
+  sExtInUse = "."
 End If
 
 End
@@ -235,6 +251,7 @@ ButtonExit.Enabled = False
 ButtonSearch.Enabled = False
 ButtonStop.Enabled = True
 LabelFilesFound.Text = "Files found = " & Str(iRows)
+LabelTime.text = ""
 
 With GridViewFound
   .Rows.Height = 17
@@ -399,5 +416,7 @@ End If
 Return "Search time: - " & sMin & sSec & sMs
 
 End
+
+
 
 

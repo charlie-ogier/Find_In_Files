@@ -1,10 +1,11 @@
 ' Gambas class file
 
 sExtList As New String[]
-sExtInUse As String = "."
+bExt As Boolean
 sFileStore As New String[]
 bStop As Boolean
 bFirst As Boolean
+bExtOpen As Boolean
 
 Public Sub Form_Open()
 
@@ -17,14 +18,16 @@ End
 
 Public Sub DirChooserFF_Change()
 Dim sFolder As String = DirChooserFF.SelectedPath
-Dim sTemp, sFilter As String
+Dim sTemp As String
 Dim sStat As Stat
 Dim sTempStore As New String[]
-Dim iFileCounter As Integer
+Dim sBuildStore As New String[]
+Dim bNoExt As Boolean
+Dim byHidden As Byte = 2
 
+If CheckBoxHidden.Value = True Then byHidden = 1
 If bFirst = False Then Return
 ButtonView.Enabled = True
-sFilter = "*"
 Settings["SelectedPath"] = sFolder
 Settings.Save
 sFileStore.Clear
@@ -38,37 +41,103 @@ Else
   CheckBoxSubFolders.Enabled = True
 Endif
 
-
-If CheckBoxSubFolders.value = True Then
-  sTempStore = RDir(sFolder, sFilter, gb.File) 
-Else
-  sTempStore = Dir(sFolder, sFilter, gb.File)
-End If
-
-For Each sTemp In sTempStore
-    If sExtInUse <> "." Then
-      If Not InStr(sExtInUse, "." & File.Ext(sFolder &/ sTemp)) Then Continue
-    Endif
-    If CheckBoxHidden.value = False Then
-      Try sStat = Stat(sFolder &/ sTemp)
-      If sStat.Hidden = False Then 
-      sFileStore.Add(sTemp)
-      Inc iFileCounter
-    Endif
+If Not bExt Then
+  If CheckBoxSubFolders.value = True Then
+    Try sTempStore = RDir(sFolder, "*", gb.File) 
   Else
-    sFileStore.Add(sTemp)
-    Inc iFileCounter
-  Endif
-Next
+    Try sTempStore = Dir(sFolder, "*", gb.File)
+  End If
+  For Each sTemp In sTempStore
+    Try sStat = Stat(sFolder &/ sTemp)
+    If sStat.Hidden = False Then sFileStore.Add(sTemp)
+    If CheckBoxHidden.value = True And sStat.Hidden = True Then sFileStore.Add(sTemp)
+  Next
+Else
+  
+  For Each sTemp In sExtList
+    If sTemp = "NO EXT" Then
+      bNoExt = True
+      Continue
+    Endif
+    If CheckBoxSubFolders.value = True Then
+      sBuildStore = RDir(sFolder, "*." & sTemp, gb.File) 
+    Else
+      sBuildStore = Dir(sFolder, "*." & sTemp, gb.File)
+    End If
+    sTempStore.Insert(sBuildStore)
+    sBuildStore.Clear
+  Next
+  
+  For Each sTemp In sTempStore
+    sStat = Stat(sFolder &/ sTemp)
+    If sStat.Hidden = False Then sFileStore.Add(sTemp)
+    If CheckBoxHidden.value = True And sStat.Hidden = True Then sFileStore.Add(sTemp)
+  Next
+  
+  If bNoExt Then 
+    sBuildStore = GetNoExtFiles()
+    sFileStore.Insert(sBuildStore)
+  End If
+  
+End If
 
 sFileStore.sort()
 
-ValueBoxNoFiles.Value = iFileCounter
-If iFileCounter > 5000 Then ButtonView.Enabled = False
+ValueBoxNoFiles.Value = sFileStore.Count
+If sFileStore.Count > 5000 Then ButtonView.Enabled = False
 LabelWorking.Visible = False
 TextBoxSearch.SetFocus
 TimerWorking.Stop
 Wait 0.1
+
+End
+
+Public Sub GetNoExtFiles() As String[]
+Dim sFolder As String = DirChooserFF.SelectedPath
+Dim sBuildStore, sRetunStore As New String[]
+Dim sTemp As String
+Dim sStat As Stat
+
+If CheckBoxSubFolders.value = True Then
+  sBuildStore = RDir(sFolder, "*", gb.File) 
+Else
+  sBuildStore = Dir(sFolder, "*", gb.File)
+End If
+
+For Each sTemp In sBuildStore
+  sStat = Stat(sFolder &/ sTemp)
+  If File.Ext(sFolder &/ sTemp) = "" And sStat.Hidden = False Then sRetunStore.Add(sTemp)
+  If File.Ext(sFolder &/ sTemp) = "" And CheckBoxHidden.value = True And sStat.Hidden = True Then sRetunStore.Add(sTemp)
+Next
+
+If CheckBoxHidden.value = True Then
+  For Each sTemp In sBuildStore
+    If sTemp Not Begins "." Then Continue
+    If File.ext(sFolder &/ sTemp) And File.BaseName(sFolder &/ sTemp) = "" Then sRetunStore.Add(sTemp)
+  Next
+End If
+
+Return sRetunStore
+
+End
+
+Public Sub NoExtention() As String[]
+Dim sFolder As String = DirChooserFF.SelectedPath
+Dim sList As New String[] 
+Dim sOutput As New String[]
+Dim sTemp As String
+
+If CheckBoxSubFolders.Value = True Then
+  sList = RDir(sFolder, "*", gb.file)
+Else
+  sList = Dir(sFolder, "*", gb.file)
+Endif
+
+For Each sTemp In sList
+  If Not InStr(sTemp, ".") Then sOutput.Add(sTemp)
+Next
+
+Return sOutput
 
 End
 
@@ -99,6 +168,7 @@ End
 
 Public Sub AllButtons_Click(Optional sDirectInput As String)
 Dim sName As String = sDirectInput
+Dim bTemp As Boolean
 
 If sName = "" Then sName = Last.name
 
@@ -115,6 +185,10 @@ Select Case sName
   Case "ButtonStop"
     bStop = True
   Case "ButtonExtensions"
+    bTemp = bExt
+    bExt = False
+    DirChooserFF_Change
+    bExt = bTemp
     Extensions
 End Select
 
@@ -126,16 +200,18 @@ End
 
 Public Sub Extensions()
 Dim sFolder As String = DirChooserFF.SelectedPath
-Dim sList As New String[]
 Dim sTemp, sTempExt, sExt As String
 Dim hCheckBox As CheckBox
 Dim siCount As Short
+
+bExtOpen = True
 
 HBoxDir.Visible = False
 HBox0.Visible = False
 HBox1.Visible = False
 HBoxExtensions.Visible = True
 ButtonAbout.Enabled = False
+ButtonSearch.Enabled = False
 
 sExtList.Clear
 
@@ -146,15 +222,15 @@ For Each sTemp In sFileStore
 Next
 
 For Each sTemp In Split(sTempExt)
-  sList.Add(sTemp)
+  If Not sTemp Then Continue
+  sExtList.Add(sTemp)
 Next
 
-sList.Sort()
+sExtList.Sort()
 VPanelExtList.Children.Clear
 
-For Each sTemp In sList
+For Each sTemp In sExtList
   hCheckBox = New CheckBox(VPanelExtList) As "AllExtCheckBoxes"
-  If Not sTemp Then Continue 
   With hCheckBox
     .Text = sTemp
     .Height = 28
@@ -173,28 +249,26 @@ End
 Public Sub TimerExt_Timer()
 
 Settings.Write(Me, "Window")                                                  'Store the window position and size
+Settings.Save
 Me.Width = 400 + VPanelExtList.Width
-Me.Center
 
 End
 
 Public Sub BuildList()
 Dim oObj As Object
 Dim sNewList As New String[]
-Dim bTest As Boolean
 
-sExtInUse = "."
+bExt = False
 
 For Each oObj In VPanelExtList.Children
   If oObj.Value = True Then sNewList.add(oObj.Text)
-  If oObj.Value = False Then bTest = True
+  If oObj.Value = False Then bExt = True
 Next
 
-If bTest = True Then 
-  sExtInUse &= sNewList.Join(".")
-Else
-  sExtInUse = "."
+If bExt = True Then 
+  sExtList = sNewList.Copy()
 End If
+
 
 End
 
@@ -237,6 +311,11 @@ ButtonAbout.Enabled = True
 
 Settings.Read(Me, "Window")                                                  'Store the window position and size
 
+TextBoxSearch_Change
+DirChooserFF_Change
+
+bExtOpen = False
+
 End
 
 Public Sub DoTheSearch()
@@ -254,10 +333,9 @@ LabelFilesFound.Text = "Files found = " & Str(iRows)
 LabelTime.text = ""
 
 With GridViewFound
-  .Rows.Height = 17
+  .Rows.Height = 18
   .Clear
   .Columns.count = 1
-  .Grid = False
 End With
 
 TextAreaFilesProcessed.text = ""
@@ -351,23 +429,38 @@ Endif
 End
 
 Public Sub ViewFiles(bMode As Boolean)
+Dim sFolder As String = DirChooserFF.SelectedPath
+Dim iCount, iRow As Integer
+Dim sExtString As String = "."
+
+If bExt Then 
+  'sExtString &= sExtList.Join(".")
+  LabelExt.Text = "Showing only files matching choosen extensions"
+Else
+    LabelExt.Text = ""
+End If
 
 If bMode Then
   ButtonView.Tag = 1
   ButtonView.Text = "&Close"
   HBoxDir.Visible = False
-  HBoxView.Visible = True
+  VBoxView.Visible = True
   HBoxCheckBoxes.Visible = False
   ButtonAbout.Enabled = False
   ButtonSearch.Enabled = False
   HBox1.Enabled = False
-  TextAreaView.text = sFileStore.Join(gb.NewLine)
-  TextAreaView.Pos = 0
+  GridViewFiles.Rows.Height = 18
+  GridViewFiles.Columns.count = 1
+  GridViewFiles.Rows.Count = sFileStore.count
+  For icount = 0 To sFileStore.Max
+    GridViewFiles[iRow, 0].text = sFileStore[iCount]
+    Inc iRow
+  Next
 Else
   ButtonView.Tag = 0
   ButtonView.Text = "&View"
   HBoxDir.Visible = True
-  HBoxView.Visible = False
+  VBoxView.Visible = False
   HBoxCheckBoxes.Visible = True
   ButtonAbout.Enabled = True
   TextBoxSearch_Change
@@ -377,6 +470,12 @@ Endif
 End
 
 Public Sub AllCheckboxes_Click()
+
+If CheckBoxHidden.value = True Then 
+  DirChooserFF.ShowHidden = True
+Else
+  DirChooserFF.ShowHidden = False
+End If
 
 DirChooserFF_Change
 
@@ -398,7 +497,7 @@ End
 
 Public Sub Form_Close()
 
-Settings.Write(Me, "Window")                                                  'Store the window position and size
+If Not bExtOpen Then Settings.Write(Me, "Window")                                                  'Store the window position and size
 
 End
 
@@ -417,6 +516,9 @@ Return "Search time: - " & sMin & sSec & sMs
 
 End
 
+Public Sub GridViewFiles_Click()
+Dim sFolder As String = DirChooserFF.SelectedPath
 
+Desktop.Open(sFolder &/ GridViewFiles[Last.Row, Last.Column].Text)
 
-
+End

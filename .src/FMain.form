@@ -5,18 +5,30 @@
   Icon = Picture["logo.png"]
   Arrangement = Arrange.Vertical
   Padding = 5
-  { HBoxView HBox
+  { VBoxView VBox
     MoveScaled(18,1,15,21)
     Visible = False
     Expand = True
     Padding = 2
-    { TextAreaView TextArea
-      MoveScaled(1,1,12,14)
-      Expand = True
-      ScrollBar = Scroll.Vertical
+    { Panel17 VBox
+      MoveScaled(1,2,13,4)
+      { LabelHelper Label
+        MoveScaled(7,0,6,4)
+        Expand = True
+        Text = ("Click on a file to open")
+      }
+      { LabelExt Label
+        MoveScaled(1,1,4,4)
+        Font = Font["Bold"]
+        Expand = True
+        Alignment = Align.Right
+      }
     }
-    { TimerSearch #Timer
-      #MoveScaled(3,6)
+    { GridViewFiles GridView
+      MoveScaled(2,8,12,9)
+      Mouse = Mouse.Pointing
+      Expand = True
+      Grid = False
     }
   }
   { HBoxDir HBox
@@ -27,6 +39,9 @@
       MoveScaled(3,3,12,16)
       Expand = True
       ShowSplitter = False
+    }
+    { TimerSearch #Timer
+      #MoveScaled(4,0)
     }
   }
   { HBoxExtensions HBox
@@ -106,7 +121,7 @@
         { ButtonDone Button ButtonsControl
           Name = "ButtonDone"
           MoveScaled(18,1,13.4286,3)
-          Text = Shortcut(("Done"), "D")
+          Text = Shortcut(("Set"), "t")
           Picture = Picture["icon:/22/apply"]
         }
         { Panel14 Panel
@@ -201,6 +216,7 @@
         MoveScaled(29,1,10,8)
         Mouse = Mouse.Pointing
         Expand = True
+        Grid = False
       }
     }
     { HBox4 HBox
@@ -294,7 +310,7 @@
     }
     { ButtonExtensions Button AllButtons
       Name = "ButtonExtensions"
-      MoveScaled(67,0,18,4)
+      MoveScaled(71,0,18,4)
       Text = Shortcut(("Extensions"), "x")
       Picture = Picture["icon:/22/menu"]
     }

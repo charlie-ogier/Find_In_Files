@@ -1,28 +1,50 @@
 [Bookmarks]
-FMain=[21,95]
+FMain=[21,95,384]
 
 [Breakpoints]
 Count=0
 
 [DebugWindow]
-Count=0
+Count=4
+DebugWindow[1]="sExtList"
+DebugWindow[2]="sBuildStore"
+DebugWindow[3]="sRetunStore"
+DebugWindow[4]="sFileStore"
+
+[DebugWindow/oObj]
+Geometry=[0,14,224,796]
+
+[DebugWindow/sBuildStore]
+Geometry=[1385,18,224,280]
+
+[DebugWindow/sExtList]
+Geometry=[1633,22,224,280]
 
 [DebugWindow/sFileStore]
-Geometry=[1161,72,545,676]
+Geometry=[1633,202,224,280]
 
 [DebugWindow/sList]
 Geometry=[1138,7,224,422]
+
+[DebugWindow/sNewList]
+Geometry=[-8,6,224,324]
+
+[DebugWindow/sRetunStore]
+Geometry=[1126,25,224,280]
 
 [DebugWindow/sStat]
 Geometry=[-8,6,242,548]
 
 [DebugWindow/sTempStore]
-Geometry=[1094,89,410,856]
+Geometry=[1202,316,410,856]
+
+[Executable]
+Path="Find_In_Files.gambas"
 
 [OpenFile]
 File[1]=".src/FMain.form"
-Active=1
-File[2]=".src/FMain.class:92.252"
+Active=2
+File[2]=".src/FMain.class:0.478"
 Count=2
 
 [Watches]

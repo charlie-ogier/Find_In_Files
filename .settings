@@ -44,7 +44,7 @@ Path="Find_In_Files.gambas"
 [OpenFile]
 File[1]=".src/FMain.form"
 Active=2
-File[2]=".src/FMain.class:0.478"
+File[2]=".src/FMain.class:0.332"
 Count=2
 
 [Watches]

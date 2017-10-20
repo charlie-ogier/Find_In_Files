@@ -5,7 +5,8 @@ bExt As Boolean
 sFileStore As New String[]
 bStop As Boolean
 bFirst As Boolean
-bExtOpen As Boolean
+bExtOpen As Boolean                                                           'Is the Extension Manager window open
+'sHasFolderChanged As String
 
 Public Sub Form_Open()
 
@@ -97,6 +98,8 @@ Dim sFolder As String = DirChooserFF.SelectedPath
 Dim sBuildStore, sRetunStore As New String[]
 Dim sTemp As String
 Dim sStat As Stat
+
+'If sFolder <> sHasFolderChanged Then bExt = False
 
 If CheckBoxSubFolders.value = True Then
   sBuildStore = RDir(sFolder, "*", gb.File) 
@@ -201,8 +204,13 @@ End
 Public Sub Extensions()
 Dim sFolder As String = DirChooserFF.SelectedPath
 Dim sTemp, sTempExt, sExt As String
+Dim sExtHold As String = "."
 Dim hCheckBox As CheckBox
 Dim siCount As Short
+
+'sHasFolderChanged = sFolder
+
+sExtHold &= sExtList.join(",")
 
 bExtOpen = True
 
@@ -236,8 +244,12 @@ For Each sTemp In sExtList
     .Height = 28
     .AutoResize = True
     .Tag = siCount
-    .Value = True
   End With
+  If sExtHold = "." Then 
+    hCheckBox.value = True
+  Else
+    hCheckBox.value = InStr(sExtHold, sTemp)
+  End If
   If sTemp = "NO EXT" Then hCheckBox.Tooltip = "This represents files with no extention"
   Inc siCount
 Next
@@ -250,7 +262,7 @@ Public Sub TimerExt_Timer()
 
 Settings.Write(Me, "Window")                                                  'Store the window position and size
 Settings.Save
-Me.Width = 400 + VPanelExtList.Width
+Me.Width = 350 + VPanelExtList.Width
 
 End
 
@@ -298,7 +310,6 @@ Next
 
 End
 
-
 Public Sub ButtonsControl_Click()
 
 If Last.Name = "ButtonDone" Then BuildList
@@ -326,6 +337,7 @@ Dim iRows, iCounter As Integer
 Dim dSearchTime As Date
 Dim dStartTime As Date = Time(Now)
 
+HBoxProgress.Visible = True
 ButtonExit.Enabled = False
 ButtonSearch.Enabled = False
 ButtonStop.Enabled = True
@@ -360,6 +372,7 @@ For Each sTemp In sFileStore
   Wait 0.001
 Next
 
+HBoxProgress.Visible = False
 If iRows > 0 Then LabelHelp.text = "Click on a file to open"
 LabelFile.Text = ""
 dSearchTime = Time(Now)
@@ -429,12 +442,9 @@ Endif
 End
 
 Public Sub ViewFiles(bMode As Boolean)
-Dim sFolder As String = DirChooserFF.SelectedPath
 Dim iCount, iRow As Integer
-Dim sExtString As String = "."
 
 If bExt Then 
-  'sExtString &= sExtList.Join(".")
   LabelExt.Text = "Showing only files matching choosen extensions"
 Else
     LabelExt.Text = ""

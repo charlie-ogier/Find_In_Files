@@ -11,7 +11,7 @@
     Expand = True
     Padding = 2
     { Panel17 VBox
-      MoveScaled(1,2,13,4)
+      MoveScaled(1,2,13,6)
       { LabelHelper Label
         MoveScaled(7,0,6,4)
         Expand = True
@@ -81,6 +81,7 @@
         { ButtonSelectAll Button AllSelect
           Name = "ButtonSelectAll"
           MoveScaled(3,0,12,4)
+          ToolTip = ("Select all extensions")
           Text = Shortcut(("Select all"), "S")
         }
         { Panel8 Panel
@@ -93,6 +94,7 @@
         { ButtonDeselectAll Button AllSelect
           Name = "ButtonDeselectAll"
           MoveScaled(20,0,12,4)
+          ToolTip = ("Deselect all extensions")
           Text = Shortcut(("Deselect all"), "a")
         }
         { Panel10 Panel
@@ -108,11 +110,12 @@
         { Panel12 Panel
           MoveScaled(0,0,1,2)
         }
-        { ButtonCancel Button ButtonsControl
-          Name = "ButtonCancel"
+        { ButtonClearAll Button ButtonsControl
+          Name = "ButtonClearAll"
           MoveScaled(2,1,13.4286,3)
-          Text = Shortcut(("Cancel"), "C")
-          Picture = Picture["icon:/22/cancel"]
+          ToolTip = ("This will cancel all selections and revert to '*'")
+          Text = Shortcut(("Clear all"), "C")
+          Picture = Picture["icon:/22/remove"]
         }
         { Panel13 Panel
           MoveScaled(15,2,2,1)
@@ -121,6 +124,7 @@
         { ButtonDone Button ButtonsControl
           Name = "ButtonDone"
           MoveScaled(18,1,13.4286,3)
+          ToolTip = ("Set you selection. only files matching you selection will be shown/searched")
           Text = Shortcut(("Set"), "t")
           Picture = Picture["icon:/22/apply"]
         }
@@ -224,6 +228,7 @@
       { ButtonStop Button AllButtons
         Name = "ButtonStop"
         MoveScaled(0,0,14,4)
+        ToolTip = ("Stop the search process")
         Text = Shortcut(("Stop"), "S")
         Picture = Picture["icon:/22/stop"]
       }
@@ -264,6 +269,7 @@
     { ButtonView ToggleButton AllButtons
       Name = "ButtonView"
       MoveScaled(29,0,18,4)
+      ToolTip = ("View files to be searched")
       Text = Shortcut(("View"), "V")
       Picture = Picture["icon:/22/text-fill"]
     }
@@ -311,11 +317,12 @@
     { ButtonExtensions Button AllButtons
       Name = "ButtonExtensions"
       MoveScaled(71,0,18,4)
+      ToolTip = ("Extension Manager")
       Text = Shortcut(("Extensions"), "x")
       Picture = Picture["icon:/22/menu"]
     }
     { TimerWorking #Timer
-      #MoveScaled(60,-2)
+      #MoveScaled(65,-2)
     }
   }
   { Panel3 Panel
@@ -326,6 +333,7 @@
     { ButtonExit Button AllButtons
       Name = "ButtonExit"
       MoveScaled(1,0,18,4)
+      ToolTip = ("Bye Bye!")
       Text = Shortcut(("Exit program"), "E")
       Picture = Picture["icon:/22/close"]
     }
@@ -336,6 +344,7 @@
     { ButtonAbout ToggleButton AllButtons
       Name = "ButtonAbout"
       MoveScaled(35,0,18,4)
+      ToolTip = ("About the program")
       Text = Shortcut(("About"), "A")
       Picture = Picture["icon:/22/info"]
     }
@@ -347,6 +356,7 @@
       Name = "ButtonSearch"
       MoveScaled(71,0,18,4)
       Enabled = False
+      ToolTip = ("Click to search for the text in the selected files")
       Text = Shortcut(("Search"), "S")
       Picture = Picture["icon:/22/find"]
     }

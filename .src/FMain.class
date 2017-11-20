@@ -184,7 +184,11 @@ Select Case sName
     DisplayAbout(ButtonAbout.Value)
   Case "ButtonSearch"
     DisplaySearch(ButtonSearch.value)
-    If ButtonSearch.value = True Then DoTheSearch
+    If ButtonSearch.value = True Then 
+      DoTheSearch
+      ButtonSearch.Tooltip = "Click to return to main diaplay"
+    Else
+    End If
   Case "ButtonStop"
     bStop = True
   Case "ButtonExtensions"
